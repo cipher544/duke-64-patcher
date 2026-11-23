@@ -2082,8 +2082,9 @@ def insertion(args):
     else:
         rom,ident,label=insert_sound(rom,Path(args.items[0]),Path(args.items[1]));message=f'Added sound {ident}: {label}'
     finish_insert(rom,size)
-    output=args.output or path.with_name(path.stem+'_patched.z64')
-    write_insert_output(output,rom,args.overwrite)
+    output=args.output if args.output is not None else path
+    in_place=output.resolve()==path.resolve()
+    write_insert_output(output,rom,args.overwrite or in_place)
     print(message+f' -> {output.resolve()} ({size//1048576} MiB; unchanged size)')
     return 0
 
@@ -2097,7 +2098,7 @@ def main(argv=None):
                'Level IDs are zero-based; GRP maps use natural filename order (E1L1, E1L2, ...).\n'
                'Tiles use tile IDs; sounds use CON definesound IDs. N64 sounds are unsupported.\n'
                'Insertion: -il MAP ROM; -rl SLOT MAP ROM; -it ID PNG ROM; -is AUDIO REF ROM.\n'
-               'Insertion never expands ROMs or installs runtime code. Default output: ROM_patched.z64.\n'
+               'Insertion never expands ROMs or installs runtime code. Insertion updates the input ROM by default; use -o to save separately. Back up your ROM first.\n'
                'PNG operations require Pillow; MAP insertion requires numpy and mapbox-earcut.',
         formatter_class=argparse.RawDescriptionHelpFormatter)
     group=parser.add_mutually_exclusive_group(required=True)
@@ -2110,7 +2111,7 @@ def main(argv=None):
     parser.add_argument('-a','-all','--all',dest='all_assets',action='store_true',help='extract all assets of the chosen type')
     parser.add_argument('items',nargs='+',help='ID and source for extraction; asset file(s) and N64 ROM for insertion')
     parser.add_argument('--name',help='level title when inserting or replacing a level')
-    parser.add_argument('-o','--output',type=Path,help='extraction directory, or output ROM filename for insertion')
+    parser.add_argument('-o','--output',type=Path,help='extraction directory, or separate output ROM filename (insertion defaults to input ROM)')
     parser.add_argument('--overwrite',action='store_true',help='allow replacing existing output files')
     args=parser.parse_args(argv)
     if args.kind.startswith(('insert_','replace_')):
